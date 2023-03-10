@@ -1,0 +1,4 @@
+add_executable(infrastructure_benchmark infrastructure_benchmark.cpp)
+target_link_libraries(infrastructure_benchmark PRIVATE infrastructure_static)
+
+AddBenchmarks(infrastructure_benchmark)
