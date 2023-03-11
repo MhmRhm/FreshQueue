@@ -1,4 +1,6 @@
-add_library(infrastructure_obj OBJECT infrastructure.cpp)
+add_library(infrastructure_obj OBJECT
+	infrastructure.cpp
+)
 target_compile_options(infrastructure_obj
 	PRIVATE ${DEFAULT_CXX_COMPILE_FLAGS}
 	PRIVATE ${DEFAULT_CXX_OPTIMIZE_FLAG}

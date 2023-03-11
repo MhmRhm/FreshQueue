@@ -25,7 +25,7 @@ install(FILES "ProjectConfig.cmake"
     RENAME "${MY_PACKAGE_NAME}Config.cmake"
 )
 
-set(CPACK_PACKAGE_VENDOR "Your Name")
-set(CPACK_PACKAGE_CONTACT "your_mail@domain.com")
-set(CPACK_PACKAGE_DESCRIPTION "My New Project About...")
+set(CPACK_PACKAGE_VENDOR "Mohammad Rahimi")
+set(CPACK_PACKAGE_CONTACT "rahimi.mhmmd@gmail.com")
+set(CPACK_PACKAGE_DESCRIPTION "A target management application.")
 include(CPack)
