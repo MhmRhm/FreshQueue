@@ -27,5 +27,5 @@ install(FILES "ProjectConfig.cmake"
 
 set(CPACK_PACKAGE_VENDOR "Mohammad Rahimi")
 set(CPACK_PACKAGE_CONTACT "rahimi.mhmmd@gmail.com")
-set(CPACK_PACKAGE_DESCRIPTION "A target management application.")
+set(CPACK_PACKAGE_DESCRIPTION "A concurrent data structure to store most recent items in a queue.")
 include(CPack)
