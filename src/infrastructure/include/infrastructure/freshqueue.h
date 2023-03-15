@@ -1,9 +1,9 @@
 #pragma once
+#include <condition_variable>
 #include <exception>
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <vector>
 
 class empty_queue : std::exception {
   virtual const char *what() const noexcept override {
@@ -24,10 +24,18 @@ public:
     const std::lock_guard<std::mutex> lock{m_mutex};
     return m_queue.size();
   }
+
+  [[nodiscard]] bool empty() const noexcept {
+    const std::lock_guard<std::mutex> lock{m_mutex};
+    return m_queue.empty();
+  }
+
   void push(const T &val) {
     const std::lock_guard<std::mutex> lock{m_mutex};
     m_queue.push(val);
+    m_conditionVariable.notify_one();
   }
+
   void pop(T &value) {
     const std::lock_guard<std::mutex> lock{m_mutex};
     if (m_queue.empty())
@@ -35,6 +43,7 @@ public:
     value = m_queue.front();
     m_queue.pop();
   }
+
   std::shared_ptr<T> pop() {
     const std::lock_guard<std::mutex> lock{m_mutex};
     if (m_queue.empty())
@@ -44,7 +53,42 @@ public:
     return result;
   }
 
+  bool tryPop(T &value) {
+    const std::lock_guard<std::mutex> lock{m_mutex};
+    if (m_queue.empty())
+      return false;
+    value = m_queue.front();
+    m_queue.pop();
+    return true;
+  }
+
+  std::shared_ptr<T> tryPop() {
+    const std::lock_guard<std::mutex> lock{m_mutex};
+    if (m_queue.empty())
+      return {};
+    auto result{std::make_shared<T>(m_queue.front())};
+    m_queue.pop();
+    return result;
+  }
+
+  void waitAndPop(T &value) {
+    std::unique_lock<std::mutex> uniqueLock{m_mutex};
+    m_conditionVariable.wait(uniqueLock, [&] { return !m_queue.empty(); });
+    value = m_queue.front();
+    m_queue.pop();
+    return;
+  }
+
+  std::shared_ptr<T> waitAndPop() {
+    std::unique_lock<std::mutex> uniqueLock{m_mutex};
+    m_conditionVariable.wait(uniqueLock, [&] { return !m_queue.empty(); });
+    auto result{std::make_shared<T>(m_queue.front())};
+    m_queue.pop();
+    return result;
+  }
+
 private:
   std::queue<T> m_queue;
   mutable std::mutex m_mutex;
+  std::condition_variable m_conditionVariable;
 };
