@@ -1,17 +1,24 @@
 #pragma once
 #include <exception>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <vector>
 
-template <typename T> class FreshQueueWithMutex {
+class empty_queue : std::exception {
+  virtual const char *what() const noexcept override {
+    return "called pop on empty queue";
+  };
+};
+
+template <typename T> class ThreadSafeFreshQueue {
 public:
-  FreshQueueWithMutex() = default;
-  FreshQueueWithMutex(const FreshQueueWithMutex &) = delete;
-  FreshQueueWithMutex(FreshQueueWithMutex &&) noexcept = delete;
-  FreshQueueWithMutex &operator=(const FreshQueueWithMutex &) = delete;
-  FreshQueueWithMutex &operator=(FreshQueueWithMutex &&) noexcept = delete;
-  virtual ~FreshQueueWithMutex() = default;
+  ThreadSafeFreshQueue() = default;
+  ThreadSafeFreshQueue(const ThreadSafeFreshQueue &) = delete;
+  ThreadSafeFreshQueue(ThreadSafeFreshQueue &&) noexcept = delete;
+  ThreadSafeFreshQueue &operator=(const ThreadSafeFreshQueue &) = delete;
+  ThreadSafeFreshQueue &operator=(ThreadSafeFreshQueue &&) noexcept = delete;
+  virtual ~ThreadSafeFreshQueue() = default;
 
   std::size_t size() const {
     const std::lock_guard<std::mutex> lock{m_mutex};
@@ -21,14 +28,20 @@ public:
     const std::lock_guard<std::mutex> lock{m_mutex};
     m_queue.push(val);
   }
-  T pop() {
+  void pop(T &value) {
     const std::lock_guard<std::mutex> lock{m_mutex};
-    if (m_queue.empty()) {
-      throw std::runtime_error("pop from empty FreshQueueWithMutex!");
-    }
-    T val{m_queue.front()};
+    if (m_queue.empty())
+      throw empty_queue{};
+    value = m_queue.front();
     m_queue.pop();
-    return val;
+  }
+  std::shared_ptr<T> pop() {
+    const std::lock_guard<std::mutex> lock{m_mutex};
+    if (m_queue.empty())
+      throw empty_queue{};
+    auto result{std::make_shared<T>(m_queue.front())};
+    m_queue.pop();
+    return result;
   }
 
 private:

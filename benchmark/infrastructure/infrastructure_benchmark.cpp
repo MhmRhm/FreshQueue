@@ -4,46 +4,106 @@
 #include "vector"
 
 template <typename T>
-void BM_FreshQueueWithMutex_PushAndPopSingleThread(benchmark::State &state) {
-  FreshQueueWithMutex<T> freashQueue{};
+void BM_ThreadSafeFreshQueue_PushAndPopByValueSingleThread(
+    benchmark::State &state) {
+  ThreadSafeFreshQueue<T> freshQueue{};
   for (auto _ : state) {
-    freashQueue.push(T{});
-    freashQueue.pop();
+    freshQueue.push(T{});
+    T value{};
+    freshQueue.pop(value);
+    benchmark::DoNotOptimize(value);
   }
   state.SetItemsProcessed(static_cast<int64_t>(state.iterations()));
 }
-BENCHMARK(BM_FreshQueueWithMutex_PushAndPopSingleThread<int>);
+BENCHMARK(BM_ThreadSafeFreshQueue_PushAndPopByValueSingleThread<int>);
 
 template <typename T>
-void BM_FreshQueueWithMutex_ManyPushsThenManyPopsSingleThread(
+void BM_ThreadSafeFreshQueue_PushAndPopByPointerSingleThread(
     benchmark::State &state) {
-  FreshQueueWithMutex<T> freashQueue{};
+  ThreadSafeFreshQueue<T> freshQueue{};
   for (auto _ : state) {
-    for (int i = state.range(0); i--;)
-      freashQueue.push(T{});
-    for (int i = state.range(0); i--;)
-      freashQueue.pop();
+    freshQueue.push(T{});
+    auto value{freshQueue.pop()};
+    benchmark::DoNotOptimize(value);
   }
-  state.SetItemsProcessed(
-      static_cast<int64_t>(state.iterations() * state.range(0)));
+  state.SetItemsProcessed(static_cast<int64_t>(state.iterations()));
 }
-BENCHMARK(BM_FreshQueueWithMutex_ManyPushsThenManyPopsSingleThread<int>)
-    ->RangeMultiplier(2)
-    ->Range(1 << 0, 1 << 10);
+BENCHMARK(BM_ThreadSafeFreshQueue_PushAndPopByPointerSingleThread<int>);
 
 template <typename T>
-void BM_FreshQueueWithMutex_ManyPushsAndPopsSingleThread(
+void BM_ThreadSafeFreshQueue_ManyPushesThenManyPopsByValueSingleThread(
     benchmark::State &state) {
-  FreshQueueWithMutex<T> freashQueue{};
+  ThreadSafeFreshQueue<T> freshQueue{};
   for (auto _ : state) {
+    for (int i = state.range(0); i--;)
+      freshQueue.push(T{});
     for (int i = state.range(0); i--;) {
-      freashQueue.push(T{});
-      freashQueue.pop();
+      T value{};
+      freshQueue.pop(value);
+      benchmark::DoNotOptimize(value);
     }
   }
   state.SetItemsProcessed(
       static_cast<int64_t>(state.iterations() * state.range(0)));
 }
-BENCHMARK(BM_FreshQueueWithMutex_ManyPushsAndPopsSingleThread<int>)
+BENCHMARK(
+    BM_ThreadSafeFreshQueue_ManyPushesThenManyPopsByValueSingleThread<int>)
+    ->RangeMultiplier(2)
+    ->Range(1 << 0, 1 << 10);
+
+template <typename T>
+void BM_ThreadSafeFreshQueue_ManyPushesThenManyPopsByPointerSingleThread(
+    benchmark::State &state) {
+  ThreadSafeFreshQueue<T> freshQueue{};
+  for (auto _ : state) {
+    for (int i = state.range(0); i--;)
+      freshQueue.push(T{});
+    for (int i = state.range(0); i--;) {
+      auto value{freshQueue.pop()};
+      benchmark::DoNotOptimize(value);
+    }
+  }
+  state.SetItemsProcessed(
+      static_cast<int64_t>(state.iterations() * state.range(0)));
+}
+BENCHMARK(
+    BM_ThreadSafeFreshQueue_ManyPushesThenManyPopsByPointerSingleThread<int>)
+    ->RangeMultiplier(2)
+    ->Range(1 << 0, 1 << 10);
+
+template <typename T>
+void BM_ThreadSafeFreshQueue_ManyPushesAndPopsByValueSingleThread(
+    benchmark::State &state) {
+  ThreadSafeFreshQueue<T> freshQueue{};
+  for (auto _ : state) {
+    for (int i = state.range(0); i--;) {
+      freshQueue.push(T{});
+      T value{};
+      freshQueue.pop(value);
+      benchmark::DoNotOptimize(value);
+    }
+  }
+  state.SetItemsProcessed(
+      static_cast<int64_t>(state.iterations() * state.range(0)));
+}
+BENCHMARK(BM_ThreadSafeFreshQueue_ManyPushesAndPopsByValueSingleThread<int>)
+    ->RangeMultiplier(2)
+    ->Range(1 << 0, 1 << 10);
+
+template <typename T>
+void BM_ThreadSafeFreshQueue_ManyPushesAndPopsByPointerSingleThread(
+    benchmark::State &state) {
+  ThreadSafeFreshQueue<T> freshQueue{};
+  for (auto _ : state) {
+    for (int i = state.range(0); i--;) {
+      freshQueue.push(T{});
+      auto value{freshQueue.pop()};
+      benchmark::DoNotOptimize(value);
+    }
+  }
+  state.SetItemsProcessed(
+      static_cast<int64_t>(state.iterations() * state.range(0)));
+}
+BENCHMARK(BM_ThreadSafeFreshQueue_ManyPushesAndPopsByPointerSingleThread<int>)
     ->RangeMultiplier(2)
     ->Range(1 << 0, 1 << 10);
