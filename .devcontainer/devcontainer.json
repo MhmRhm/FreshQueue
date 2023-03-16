@@ -11,7 +11,8 @@
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
         "twxs.cmake",
-        "eamodio.gitlens"
+        "eamodio.gitlens",
+        "matepek.vscode-catch2-test-adapter"
       ]
     }
   },
