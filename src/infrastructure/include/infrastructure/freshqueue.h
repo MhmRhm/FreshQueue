@@ -30,9 +30,9 @@ public:
     return m_queue.empty();
   }
 
-  void push(const T &val) {
+  void push(T val) {
     const std::lock_guard<std::mutex> lock{m_mutex};
-    m_queue.push(val);
+    m_queue.push(std::move(val));
     m_conditionVariable.notify_one();
   }
 
@@ -40,7 +40,7 @@ public:
     const std::lock_guard<std::mutex> lock{m_mutex};
     if (m_queue.empty())
       throw empty_queue{};
-    value = m_queue.front();
+    value = std::move(m_queue.front());
     m_queue.pop();
   }
 
@@ -48,7 +48,7 @@ public:
     const std::lock_guard<std::mutex> lock{m_mutex};
     if (m_queue.empty())
       throw empty_queue{};
-    auto result{std::make_shared<T>(m_queue.front())};
+    auto result{std::make_shared<T>(std::move(m_queue.front()))};
     m_queue.pop();
     return result;
   }
@@ -57,7 +57,7 @@ public:
     const std::lock_guard<std::mutex> lock{m_mutex};
     if (m_queue.empty())
       return false;
-    value = m_queue.front();
+    value = std::move(m_queue.front());
     m_queue.pop();
     return true;
   }
@@ -66,7 +66,7 @@ public:
     const std::lock_guard<std::mutex> lock{m_mutex};
     if (m_queue.empty())
       return {};
-    auto result{std::make_shared<T>(m_queue.front())};
+    auto result{std::make_shared<T>(std::move(m_queue.front()))};
     m_queue.pop();
     return result;
   }
@@ -74,7 +74,7 @@ public:
   void waitAndPop(T &value) {
     std::unique_lock<std::mutex> uniqueLock{m_mutex};
     m_conditionVariable.wait(uniqueLock, [&] { return !m_queue.empty(); });
-    value = m_queue.front();
+    value = std::move(m_queue.front());
     m_queue.pop();
     return;
   }
@@ -82,7 +82,7 @@ public:
   std::shared_ptr<T> waitAndPop() {
     std::unique_lock<std::mutex> uniqueLock{m_mutex};
     m_conditionVariable.wait(uniqueLock, [&] { return !m_queue.empty(); });
-    auto result{std::make_shared<T>(m_queue.front())};
+    auto result{std::make_shared<T>(std::move(m_queue.front()))};
     m_queue.pop();
     return result;
   }
