@@ -32,7 +32,7 @@ public:
 
   void push(T val) {
     const std::lock_guard<std::mutex> lock{m_mutex};
-    m_queue.push(std::move(val));
+    m_queue.push(std::make_shared<T>(std::move(val)));
     m_conditionVariable.notify_one();
   }
 
@@ -40,7 +40,7 @@ public:
     const std::lock_guard<std::mutex> lock{m_mutex};
     if (m_queue.empty())
       throw empty_queue{};
-    value = std::move(m_queue.front());
+    value = std::move(*m_queue.front());
     m_queue.pop();
   }
 
@@ -48,7 +48,7 @@ public:
     const std::lock_guard<std::mutex> lock{m_mutex};
     if (m_queue.empty())
       throw empty_queue{};
-    auto result{std::make_shared<T>(std::move(m_queue.front()))};
+    auto result{m_queue.front()};
     m_queue.pop();
     return result;
   }
@@ -57,7 +57,7 @@ public:
     const std::lock_guard<std::mutex> lock{m_mutex};
     if (m_queue.empty())
       return false;
-    value = std::move(m_queue.front());
+    value = std::move(*m_queue.front());
     m_queue.pop();
     return true;
   }
@@ -66,7 +66,7 @@ public:
     const std::lock_guard<std::mutex> lock{m_mutex};
     if (m_queue.empty())
       return {};
-    auto result{std::make_shared<T>(std::move(m_queue.front()))};
+    auto result{m_queue.front()};
     m_queue.pop();
     return result;
   }
@@ -74,7 +74,7 @@ public:
   void waitAndPop(T &value) {
     std::unique_lock<std::mutex> uniqueLock{m_mutex};
     m_conditionVariable.wait(uniqueLock, [&] { return !m_queue.empty(); });
-    value = std::move(m_queue.front());
+    value = std::move(*m_queue.front());
     m_queue.pop();
     return;
   }
@@ -82,13 +82,13 @@ public:
   std::shared_ptr<T> waitAndPop() {
     std::unique_lock<std::mutex> uniqueLock{m_mutex};
     m_conditionVariable.wait(uniqueLock, [&] { return !m_queue.empty(); });
-    auto result{std::make_shared<T>(std::move(m_queue.front()))};
+    auto result{m_queue.front()};
     m_queue.pop();
     return result;
   }
 
 private:
-  std::queue<T> m_queue;
+  std::queue<std::shared_ptr<T>> m_queue;
   mutable std::mutex m_mutex;
   std::condition_variable m_conditionVariable;
 };
