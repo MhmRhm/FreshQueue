@@ -21,23 +21,23 @@ public:
   virtual ~ThreadSafeFreshQueue() = default;
 
   std::size_t size() const {
-    const std::lock_guard<std::mutex> lock{m_mutex};
+    const std::lock_guard lock{m_mutex};
     return m_queue.size();
   }
 
   [[nodiscard]] bool empty() const noexcept {
-    const std::lock_guard<std::mutex> lock{m_mutex};
+    const std::lock_guard lock{m_mutex};
     return m_queue.empty();
   }
 
   void push(T val) {
-    const std::lock_guard<std::mutex> lock{m_mutex};
+    const std::lock_guard lock{m_mutex};
     m_queue.push(std::make_shared<T>(std::move(val)));
-    m_conditionVariable.notify_one();
+    m_pushNotification.notify_one();
   }
 
   void pop(T &value) {
-    const std::lock_guard<std::mutex> lock{m_mutex};
+    const std::lock_guard lock{m_mutex};
     if (m_queue.empty())
       throw empty_queue{};
     value = std::move(*m_queue.front());
@@ -45,7 +45,7 @@ public:
   }
 
   std::shared_ptr<T> pop() {
-    const std::lock_guard<std::mutex> lock{m_mutex};
+    const std::lock_guard lock{m_mutex};
     if (m_queue.empty())
       throw empty_queue{};
     auto result{m_queue.front()};
@@ -54,7 +54,7 @@ public:
   }
 
   bool tryPop(T &value) {
-    const std::lock_guard<std::mutex> lock{m_mutex};
+    const std::lock_guard lock{m_mutex};
     if (m_queue.empty())
       return false;
     value = std::move(*m_queue.front());
@@ -63,7 +63,7 @@ public:
   }
 
   std::shared_ptr<T> tryPop() {
-    const std::lock_guard<std::mutex> lock{m_mutex};
+    const std::lock_guard lock{m_mutex};
     if (m_queue.empty())
       return {};
     auto result{m_queue.front()};
@@ -72,16 +72,16 @@ public:
   }
 
   void waitAndPop(T &value) {
-    std::unique_lock<std::mutex> uniqueLock{m_mutex};
-    m_conditionVariable.wait(uniqueLock, [&] { return !m_queue.empty(); });
+    std::unique_lock uniqueLock{m_mutex};
+    m_pushNotification.wait(uniqueLock, [&] { return !m_queue.empty(); });
     value = std::move(*m_queue.front());
     m_queue.pop();
     return;
   }
 
   std::shared_ptr<T> waitAndPop() {
-    std::unique_lock<std::mutex> uniqueLock{m_mutex};
-    m_conditionVariable.wait(uniqueLock, [&] { return !m_queue.empty(); });
+    std::unique_lock uniqueLock{m_mutex};
+    m_pushNotification.wait(uniqueLock, [&] { return !m_queue.empty(); });
     auto result{m_queue.front()};
     m_queue.pop();
     return result;
@@ -90,7 +90,7 @@ public:
 private:
   std::queue<std::shared_ptr<T>> m_queue;
   mutable std::mutex m_mutex;
-  std::condition_variable m_conditionVariable;
+  std::condition_variable m_pushNotification;
 };
 
 template <typename T> class ConcurrentFreshQueue {
@@ -110,18 +110,49 @@ public:
 
 private:
   Node *getTail() {
-    const std::lock_guard<std::mutex> tailLock{m_tailMutex};
+    const std::lock_guard tailLock{m_tailMutex};
     return m_tail;
   }
 
   std::unique_ptr<Node> popHead() {
-    const std::lock_guard<std::mutex> headLock{m_headMutex};
-    if (m_head.get() == getTail()) {
-      return {};
-    }
     auto head{std::move(m_head)};
     m_head = std::move(head->next);
     return head;
+  }
+
+  std::unique_ptr<Node> tryPopHead() {
+    const std::lock_guard headLock{m_headMutex};
+    if (m_head.get() == getTail()) {
+      return {};
+    }
+    return popHead();
+  }
+
+  bool tryPopHead(T &value) {
+    const std::lock_guard headLock{m_headMutex};
+    if (m_head.get() == getTail()) {
+      return false;
+    }
+    value = std::move(*popHead()->data);
+    return true;
+  }
+
+  std::unique_lock<std::mutex> waitForData() {
+    std::unique_lock headLock{m_headMutex};
+    m_pushNotification.wait(headLock,
+                            [&] { return m_head.get() != getTail(); });
+    return headLock;
+  }
+
+  std::unique_ptr<Node> waitPopHead() {
+    std::unique_lock headLock{waitForData()};
+    return popHead();
+  }
+
+  std::unique_ptr<Node> waitPopHead(T &value) {
+    std::unique_lock headLock{waitForData()};
+    value = std::move(*m_head->data);
+    return popHead();
   }
 
 public:
@@ -129,18 +160,32 @@ public:
     auto newTail{std::make_unique<Node>()};
     auto newTailRaw = newTail.get();
     auto newData = std::make_shared<T>(std::move(value));
-    const std::lock_guard<std::mutex> tailLock{m_tailMutex};
-    m_tail->data = newData;
-    m_tail->next = std::move(newTail);
-    m_tail = newTailRaw;
+    {
+      std::lock_guard tailLock{m_tailMutex};
+      m_tail->data = newData;
+      m_tail->next = std::move(newTail);
+      m_tail = newTailRaw;
+    }
+    m_pushNotification.notify_one();
   }
 
   std::shared_ptr<T> tryPop() {
-    auto poppedHead{popHead()};
-    if (poppedHead) {
-      return poppedHead->data;
+    auto head{tryPopHead()};
+    if (head) {
+      return head->data;
     }
     return {};
+  }
+
+  bool tryPop(T &value) { return tryPopHead(value); }
+
+  std::shared_ptr<T> waitAndPop() { return waitPopHead()->data; }
+
+  void waitAndPop(T &value) { waitPopHead(value); }
+
+  bool empty() {
+    const std::lock_guard headLock{m_headMutex};
+    return m_head.get() == getTail();
   }
 
 private:
@@ -148,4 +193,5 @@ private:
   Node *m_tail;
   std::mutex m_headMutex;
   std::mutex m_tailMutex;
+  std::condition_variable m_pushNotification;
 };
