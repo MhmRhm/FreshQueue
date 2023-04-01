@@ -92,3 +92,60 @@ private:
   mutable std::mutex m_mutex;
   std::condition_variable m_conditionVariable;
 };
+
+template <typename T> class ConcurrentFreshQueue {
+private:
+  struct Node {
+    std::shared_ptr<T> data;
+    std::unique_ptr<Node> next;
+  };
+
+public:
+  ConcurrentFreshQueue() : m_head{new Node{}}, m_tail{m_head.get()} {};
+  ConcurrentFreshQueue(const ConcurrentFreshQueue &) = delete;
+  ConcurrentFreshQueue(ConcurrentFreshQueue &&) noexcept = delete;
+  ConcurrentFreshQueue &operator=(const ConcurrentFreshQueue &) = delete;
+  ConcurrentFreshQueue &operator=(ConcurrentFreshQueue &&) noexcept = delete;
+  virtual ~ConcurrentFreshQueue() = default;
+
+private:
+  Node *getTail() {
+    const std::lock_guard<std::mutex> tailLock{m_tailMutex};
+    return m_tail;
+  }
+
+  std::unique_ptr<Node> popHead() {
+    const std::lock_guard<std::mutex> headLock{m_headMutex};
+    if (m_head.get() == getTail()) {
+      return {};
+    }
+    auto head{std::move(m_head)};
+    m_head = std::move(head->next);
+    return head;
+  }
+
+public:
+  void push(const T &value) {
+    auto newTail{std::make_unique<Node>()};
+    auto newTailRaw = newTail.get();
+    auto newData = std::make_shared<T>(std::move(value));
+    const std::lock_guard<std::mutex> tailLock{m_tailMutex};
+    m_tail->data = newData;
+    m_tail->next = std::move(newTail);
+    m_tail = newTailRaw;
+  }
+
+  std::shared_ptr<T> tryPop() {
+    auto poppedHead{popHead()};
+    if (poppedHead) {
+      return poppedHead->data;
+    }
+    return {};
+  }
+
+private:
+  std::unique_ptr<Node> m_head;
+  Node *m_tail;
+  std::mutex m_headMutex;
+  std::mutex m_tailMutex;
+};
