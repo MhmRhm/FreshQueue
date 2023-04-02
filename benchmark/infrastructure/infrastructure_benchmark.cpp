@@ -1,143 +1,176 @@
 #include "benchmark/benchmark.h"
 #include "infrastructure/infrastructure.h"
 
-template <typename T>
-void BM_ThreadSafeFreshQueue_PushAndPopByValueSingleThread(
-    benchmark::State &state) {
-  ThreadSafeFreshQueue<T> freshQueue{};
+template <typename T> void BM_Queue_PushAndPop(benchmark::State &state) {
+  std::queue<T> queue{};
+  T value{};
   for (auto _ : state) {
-    freshQueue.push(T{});
-    T value{};
-    freshQueue.pop(value);
-    benchmark::DoNotOptimize(value);
-  }
-  state.SetItemsProcessed(static_cast<int64_t>(state.iterations()));
-}
-BENCHMARK(BM_ThreadSafeFreshQueue_PushAndPopByValueSingleThread<int>);
-
-template <typename T>
-void BM_ThreadSafeFreshQueue_PushAndPopByPointerSingleThread(
-    benchmark::State &state) {
-  ThreadSafeFreshQueue<T> freshQueue{};
-  for (auto _ : state) {
-    freshQueue.push(T{});
-    auto value{freshQueue.pop()};
-    benchmark::DoNotOptimize(value);
-  }
-  state.SetItemsProcessed(static_cast<int64_t>(state.iterations()));
-}
-BENCHMARK(BM_ThreadSafeFreshQueue_PushAndPopByPointerSingleThread<int>);
-
-template <typename T>
-void BM_ThreadSafeFreshQueue_ManyPushesThenManyPopsByValueSingleThread(
-    benchmark::State &state) {
-  ThreadSafeFreshQueue<T> freshQueue{};
-  for (auto _ : state) {
-    for (int i = state.range(0); i--;)
-      freshQueue.push(T{});
     for (int i = state.range(0); i--;) {
-      T value{};
-      freshQueue.pop(value);
+      queue.push(T{});
+      value = queue.front();
+      queue.pop();
       benchmark::DoNotOptimize(value);
     }
   }
-  state.SetItemsProcessed(
-      static_cast<int64_t>(state.iterations() * state.range(0)));
+  state.counters["Pushes"] = benchmark::Counter(
+      static_cast<int64_t>(state.iterations() * state.range(0)),
+      benchmark::Counter::kIsRate);
 }
-BENCHMARK(
-    BM_ThreadSafeFreshQueue_ManyPushesThenManyPopsByValueSingleThread<int>)
+BENCHMARK(BM_Queue_PushAndPop<int>)->RangeMultiplier(2)->Range(1 << 0, 1 << 10);
+
+template <typename T>
+void BM_QueueOfSharedPointer_PushAndPop(benchmark::State &state) {
+  std::queue<std::shared_ptr<T>> queue{};
+  std::shared_ptr<T> value{};
+  for (auto _ : state) {
+    for (int i = state.range(0); i--;) {
+      queue.push(std::shared_ptr<T>{});
+      value = queue.front();
+      queue.pop();
+      benchmark::DoNotOptimize(value);
+    }
+  }
+  state.counters["Pushes"] = benchmark::Counter(
+      static_cast<int64_t>(state.iterations() * state.range(0)),
+      benchmark::Counter::kIsRate);
+}
+BENCHMARK(BM_QueueOfSharedPointer_PushAndPop<int>)
     ->RangeMultiplier(2)
     ->Range(1 << 0, 1 << 10);
 
 template <typename T>
-void BM_ThreadSafeFreshQueue_ManyPushesThenManyPopsByPointerSingleThread(
-    benchmark::State &state) {
-  ThreadSafeFreshQueue<T> freshQueue{};
+void BM_QueueOfSharedPointer_PushAndPopWithLock(benchmark::State &state) {
+  std::queue<std::shared_ptr<T>> queue{};
+  std::shared_ptr<T> value{};
+  std::mutex mutex;
   for (auto _ : state) {
-    for (int i = state.range(0); i--;)
-      freshQueue.push(T{});
     for (int i = state.range(0); i--;) {
-      auto value{freshQueue.pop()};
+      {
+        std::lock_guard lock{mutex};
+        queue.push(std::shared_ptr<T>{});
+      }
+      {
+        std::lock_guard lock{mutex};
+        value = queue.front();
+        queue.pop();
+      }
       benchmark::DoNotOptimize(value);
     }
   }
-  state.SetItemsProcessed(
-      static_cast<int64_t>(state.iterations() * state.range(0)));
+  state.counters["Pushes"] = benchmark::Counter(
+      static_cast<int64_t>(state.iterations() * state.range(0)),
+      benchmark::Counter::kIsRate);
 }
-BENCHMARK(
-    BM_ThreadSafeFreshQueue_ManyPushesThenManyPopsByPointerSingleThread<int>)
+BENCHMARK(BM_QueueOfSharedPointer_PushAndPopWithLock<int>)
     ->RangeMultiplier(2)
     ->Range(1 << 0, 1 << 10);
 
 template <typename T>
-void BM_ThreadSafeFreshQueue_ManyPushesAndPopsByValueSingleThread(
-    benchmark::State &state) {
-  ThreadSafeFreshQueue<T> freshQueue{};
+void BM_ThreadSafeFreshQueue_PushAndPop(benchmark::State &state) {
+  ThreadSafeFreshQueue<T> queue{};
+  T value{};
   for (auto _ : state) {
     for (int i = state.range(0); i--;) {
-      freshQueue.push(T{});
-      T value{};
-      freshQueue.pop(value);
+      queue.push(T{});
+      queue.waitAndPop(value);
       benchmark::DoNotOptimize(value);
     }
   }
-  state.SetItemsProcessed(
-      static_cast<int64_t>(state.iterations() * state.range(0)));
+  state.counters["Pushes"] = benchmark::Counter(
+      static_cast<int64_t>(state.iterations() * state.range(0)),
+      benchmark::Counter::kIsRate);
 }
-BENCHMARK(BM_ThreadSafeFreshQueue_ManyPushesAndPopsByValueSingleThread<int>)
+BENCHMARK(BM_ThreadSafeFreshQueue_PushAndPop<int>)
     ->RangeMultiplier(2)
     ->Range(1 << 0, 1 << 10);
 
 template <typename T>
-void BM_ThreadSafeFreshQueue_ManyPushesAndPopsByPointerSingleThread(
-    benchmark::State &state) {
-  ThreadSafeFreshQueue<T> freshQueue{};
+void BM_ConcurrentFreshQueue_PushAndPop(benchmark::State &state) {
+  ConcurrentFreshQueue<T> queue{};
+  T value{};
   for (auto _ : state) {
     for (int i = state.range(0); i--;) {
-      freshQueue.push(T{});
-      auto value{freshQueue.pop()};
+      queue.push(T{});
+      queue.waitAndPop(value);
       benchmark::DoNotOptimize(value);
     }
   }
-  state.SetItemsProcessed(
-      static_cast<int64_t>(state.iterations() * state.range(0)));
+  state.counters["Pushes"] = benchmark::Counter(
+      static_cast<int64_t>(state.iterations() * state.range(0)),
+      benchmark::Counter::kIsRate);
 }
-BENCHMARK(BM_ThreadSafeFreshQueue_ManyPushesAndPopsByPointerSingleThread<int>)
+BENCHMARK(BM_ConcurrentFreshQueue_PushAndPop<int>)
     ->RangeMultiplier(2)
     ->Range(1 << 0, 1 << 10);
 
 template <typename T>
-class ThreadSafeFreshQueueMultiThreadFixture : public benchmark::Fixture {
+class BM_ThreadSafeFreshQueueMultiThreadFixture : public benchmark::Fixture {
 protected:
-  ThreadSafeFreshQueue<T> m_freshQueue{};
+  ThreadSafeFreshQueue<T> m_queue{};
 };
 
-BENCHMARK_TEMPLATE_DEFINE_F(ThreadSafeFreshQueueMultiThreadFixture,
-                            ManySeparatedPushesAndPopsByValue, int)
+BENCHMARK_TEMPLATE_DEFINE_F(BM_ThreadSafeFreshQueueMultiThreadFixture,
+                            PushAndPop, int)
 (benchmark::State &state) {
   bool isPushingThread{state.thread_index() % 2 == 0};
   if (isPushingThread) {
     for (auto _ : state) {
       for (int i = state.range(0); i--;) {
-        m_freshQueue.push(420);
+        m_queue.push(i);
       }
     }
-    state.counters["pushs"] = state.iterations() * state.range(0);
+    state.counters["Pushes"] = benchmark::Counter(
+        static_cast<int64_t>(state.iterations() * state.range(0)),
+        benchmark::Counter::kIsRate);
   } else {
+    int value{};
     for (auto _ : state) {
       for (int i = state.range(0); i--;) {
-        int value{};
-        m_freshQueue.waitAndPop(value);
+        m_queue.waitAndPop(value);
         benchmark::DoNotOptimize(value);
       }
     }
-    state.counters["pops"] = state.iterations() * state.range(0);
   }
-  state.SetItemsProcessed(
-      static_cast<int64_t>(state.iterations() * state.range(0)));
 }
-BENCHMARK_REGISTER_F(ThreadSafeFreshQueueMultiThreadFixture,
-                     ManySeparatedPushesAndPopsByValue)
+BENCHMARK_REGISTER_F(BM_ThreadSafeFreshQueueMultiThreadFixture, PushAndPop)
     ->RangeMultiplier(2)
     ->Range(1 << 0, 1 << 10)
-    ->ThreadRange(2, std::thread::hardware_concurrency());
+    ->ThreadRange(2, std::thread::hardware_concurrency())
+    ->MeasureProcessCPUTime()
+    ->UseRealTime();
+
+template <typename T>
+class BM_ConcurrentFreshQueueMultiThreadFixture : public benchmark::Fixture {
+protected:
+  ConcurrentFreshQueue<T> m_queue{};
+};
+
+BENCHMARK_TEMPLATE_DEFINE_F(BM_ConcurrentFreshQueueMultiThreadFixture,
+                            PushAndPop, int)
+(benchmark::State &state) {
+  bool isPushingThread{state.thread_index() % 2 == 0};
+  if (isPushingThread) {
+    for (auto _ : state) {
+      for (int i = state.range(0); i--;) {
+        m_queue.push(i);
+      }
+    }
+    state.counters["Pushes"] = benchmark::Counter(
+        static_cast<int64_t>(state.iterations() * state.range(0)),
+        benchmark::Counter::kIsRate);
+  } else {
+    int value{};
+    for (auto _ : state) {
+      for (int i = state.range(0); i--;) {
+        m_queue.waitAndPop(value);
+        benchmark::DoNotOptimize(value);
+      }
+    }
+  }
+}
+BENCHMARK_REGISTER_F(BM_ConcurrentFreshQueueMultiThreadFixture, PushAndPop)
+    ->RangeMultiplier(2)
+    ->Range(1 << 0, 1 << 10)
+    ->ThreadRange(2, std::thread::hardware_concurrency())
+    ->MeasureProcessCPUTime()
+    ->UseRealTime();
