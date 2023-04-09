@@ -1,9 +1,5 @@
 #include "infrastructure/infrastructure.h"
 #include "gtest/gtest.h"
-#include <algorithm>
-#include <chrono>
-#include <ranges>
-#include <thread>
 
 // Tests for ThreadSafeFreshQueue
 

@@ -9,6 +9,10 @@ target_precompile_headers(precompiled INTERFACE
 	<string_view>
 	<random>
 	<vector>
+	<algorithm>
+	<chrono>
+	<ranges>
+	<thread>
 )
 
 macro(AddPrecompiledHeaders target)
