@@ -13,7 +13,7 @@ set_target_properties(infrastructure_obj PROPERTIES
     PUBLIC_HEADER src/infrastructure/include/infrastructure/infrastructure.h
     POSITION_INDEPENDENT_CODE 1
 )
-AddPrecompiledHeaders(infrastructure_obj)
+target_link_libraries(infrastructure_obj PRIVATE atomic precompiled)
 BuildInfo(infrastructure_obj)
 
 add_library(infrastructure_shared SHARED)
