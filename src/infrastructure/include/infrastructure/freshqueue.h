@@ -5,7 +5,7 @@
 #include <mutex>
 #include <queue>
 
-class empty_queue : std::exception {
+class EmptyQueue : std::exception {
   virtual const char *what() const noexcept override {
     return "called pop on empty queue";
   };
@@ -39,7 +39,7 @@ public:
   void pop(T &value) {
     const std::lock_guard lock{m_mutex};
     if (m_queue.empty())
-      throw empty_queue{};
+      throw EmptyQueue{};
     value = std::move(*m_queue.front());
     m_queue.pop();
   }
@@ -47,7 +47,7 @@ public:
   std::shared_ptr<T> pop() {
     const std::lock_guard lock{m_mutex};
     if (m_queue.empty())
-      throw empty_queue{};
+      throw EmptyQueue{};
     auto result{m_queue.front()};
     m_queue.pop();
     return result;

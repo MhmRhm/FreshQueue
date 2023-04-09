@@ -5,7 +5,7 @@
 
 TEST(ThreadSafeFreshQueueOfInts, initiallyEmptyPop) {
   ThreadSafeFreshQueue<int> freshQueue{};
-  ASSERT_THROW(freshQueue.pop(), empty_queue);
+  ASSERT_THROW(freshQueue.pop(), EmptyQueue);
 }
 
 TEST(ThreadSafeFreshQueueOfInts, initiallyEmptySize) {
