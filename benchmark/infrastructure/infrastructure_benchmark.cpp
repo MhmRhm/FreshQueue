@@ -17,7 +17,7 @@ template <typename T> void BM_Queue_PushAndPop(benchmark::State &state) {
       static_cast<int64_t>(state.iterations() * state.range(0)),
       benchmark::Counter::kIsRate);
 }
-BENCHMARK(BM_Queue_PushAndPop<int>)->RangeMultiplier(2)->Range(1 << 0, 1 << 10);
+BENCHMARK(BM_Queue_PushAndPop<int>)->RangeMultiplier(2)->Range(1 << 0, 1 << 5);
 
 template <typename T>
 void BM_QueueOfSharedPointer_PushAndPop(benchmark::State &state) {
@@ -37,7 +37,7 @@ void BM_QueueOfSharedPointer_PushAndPop(benchmark::State &state) {
 }
 BENCHMARK(BM_QueueOfSharedPointer_PushAndPop<int>)
     ->RangeMultiplier(2)
-    ->Range(1 << 0, 1 << 10);
+    ->Range(1 << 0, 1 << 5);
 
 template <typename T>
 void BM_QueueOfSharedPointer_PushAndPopWithLock(benchmark::State &state) {
@@ -64,7 +64,7 @@ void BM_QueueOfSharedPointer_PushAndPopWithLock(benchmark::State &state) {
 }
 BENCHMARK(BM_QueueOfSharedPointer_PushAndPopWithLock<int>)
     ->RangeMultiplier(2)
-    ->Range(1 << 0, 1 << 10);
+    ->Range(1 << 0, 1 << 5);
 
 template <typename T>
 void BM_ThreadSafeFreshQueue_PushAndPop(benchmark::State &state) {
@@ -83,7 +83,7 @@ void BM_ThreadSafeFreshQueue_PushAndPop(benchmark::State &state) {
 }
 BENCHMARK(BM_ThreadSafeFreshQueue_PushAndPop<int>)
     ->RangeMultiplier(2)
-    ->Range(1 << 0, 1 << 10);
+    ->Range(1 << 0, 1 << 5);
 
 template <typename T>
 void BM_ConcurrentFreshQueue_PushAndPop(benchmark::State &state) {
@@ -102,7 +102,26 @@ void BM_ConcurrentFreshQueue_PushAndPop(benchmark::State &state) {
 }
 BENCHMARK(BM_ConcurrentFreshQueue_PushAndPop<int>)
     ->RangeMultiplier(2)
-    ->Range(1 << 0, 1 << 10);
+    ->Range(1 << 0, 1 << 5);
+
+template <typename T>
+void BM_LockFreeFreshQueue_PushAndPop(benchmark::State &state) {
+  boost::lockfree::queue<int> queue{10};
+  T value{};
+  for (auto _ : state) {
+    for (int i = state.range(0); i--;) {
+      queue.push(T{});
+      queue.pop(value);
+      benchmark::DoNotOptimize(value);
+    }
+  }
+  state.counters["Pushes"] = benchmark::Counter(
+      static_cast<int64_t>(state.iterations() * state.range(0)),
+      benchmark::Counter::kIsRate);
+}
+BENCHMARK(BM_LockFreeFreshQueue_PushAndPop<int>)
+    ->RangeMultiplier(2)
+    ->Range(1 << 0, 1 << 5);
 
 template <typename T>
 class BM_ThreadSafeFreshQueueMultiThreadFixture : public benchmark::Fixture {
@@ -135,8 +154,8 @@ BENCHMARK_TEMPLATE_DEFINE_F(BM_ThreadSafeFreshQueueMultiThreadFixture,
 }
 BENCHMARK_REGISTER_F(BM_ThreadSafeFreshQueueMultiThreadFixture, PushAndPop)
     ->RangeMultiplier(2)
-    ->Range(1 << 0, 1 << 10)
-    ->ThreadRange(2, std::thread::hardware_concurrency())
+    ->Range(1 << 0, 1 << 5)
+    ->ThreadRange(2, 1 << 10)
     ->MeasureProcessCPUTime()
     ->UseRealTime();
 
@@ -171,8 +190,8 @@ BENCHMARK_TEMPLATE_DEFINE_F(BM_ConcurrentFreshQueueMultiThreadFixture,
 }
 BENCHMARK_REGISTER_F(BM_ConcurrentFreshQueueMultiThreadFixture, PushAndPop)
     ->RangeMultiplier(2)
-    ->Range(1 << 0, 1 << 10)
-    ->ThreadRange(2, std::thread::hardware_concurrency())
+    ->Range(1 << 0, 1 << 5)
+    ->ThreadRange(2, 1 << 10)
     ->MeasureProcessCPUTime()
     ->UseRealTime();
 
@@ -208,7 +227,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(BM_LockFreeFreshQueueMultiThreadFixture, PushAndPop,
 }
 BENCHMARK_REGISTER_F(BM_LockFreeFreshQueueMultiThreadFixture, PushAndPop)
     ->RangeMultiplier(2)
-    ->Range(1 << 0, 1 << 10)
-    ->ThreadRange(2, std::thread::hardware_concurrency())
+    ->Range(1 << 0, 1 << 5)
+    ->ThreadRange(2, 1 << 10)
     ->MeasureProcessCPUTime()
     ->UseRealTime();
