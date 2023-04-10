@@ -1,5 +1,6 @@
 #include "infrastructure/infrastructure.h"
 #include "gtest/gtest.h"
+#include <boost/lockfree/queue.hpp>
 
 // Tests for ThreadSafeFreshQueue
 
@@ -320,6 +321,65 @@ TEST(ConcurrentFreshQueueOfInts, manyWaitAndPopByPointerThenPush) {
     using namespace std::views;
     std::this_thread::sleep_for(10ms);
     for (auto &&i : iota(0, 10)) {
+      freshQueue.push(i);
+    }
+  }};
+  popThread.join();
+  pushThread.join();
+}
+
+// Tests for Boost::lockfree::queue
+
+TEST(LockFreeFreshQueueOfInts, initiallyEmptyEmpty) {
+  boost::lockfree::queue<int> freshQueue{10};
+  ASSERT_TRUE(freshQueue.empty());
+}
+
+TEST(LockFreeFreshQueueOfInts, onePushEmpty) {
+  boost::lockfree::queue<int> freshQueue{10};
+  freshQueue.push(42);
+  ASSERT_FALSE(freshQueue.empty());
+}
+
+TEST(LockFreeFreshQueueOfInts, manyPushEmpty) {
+  using namespace std::views;
+  boost::lockfree::queue<int> freshQueue{10};
+  for (auto &&i : iota(0, 100)) {
+    freshQueue.push(i);
+  }
+  ASSERT_FALSE(freshQueue.empty());
+}
+
+TEST(LockFreeFreshQueueOfInts, initiallyEmptyPop) {
+  boost::lockfree::queue<int> freshQueue{10};
+  int value{};
+  ASSERT_FALSE(freshQueue.pop(value));
+}
+
+TEST(LockFreeFreshQueueOfInts, pushAndPop) {
+  boost::lockfree::queue<int> freshQueue{10};
+  freshQueue.push(42);
+  int value{};
+  ASSERT_TRUE(freshQueue.pop(value));
+  ASSERT_EQ(value, 42);
+}
+
+TEST(LockFreeFreshQueueOfInts, manyWaitAndPopThenPush) {
+  boost::lockfree::queue<int> freshQueue{10};
+  int value{};
+  std::thread popThread{[&] {
+    using namespace std::views;
+    for (auto &&i : iota(0, 1'000)) {
+      while (!freshQueue.pop(value))
+        ;
+      std::cout << value << std::endl;
+      ASSERT_EQ(value, i);
+    }
+  }};
+  std::thread pushThread{[&] {
+    using namespace std::chrono;
+    using namespace std::views;
+    for (auto &&i : iota(0, 1'000)) {
       freshQueue.push(i);
     }
   }};

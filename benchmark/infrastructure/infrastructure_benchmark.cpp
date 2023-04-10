@@ -1,5 +1,6 @@
 #include "benchmark/benchmark.h"
 #include "infrastructure/infrastructure.h"
+#include <boost/lockfree/queue.hpp>
 
 template <typename T> void BM_Queue_PushAndPop(benchmark::State &state) {
   std::queue<T> queue{};
@@ -169,6 +170,43 @@ BENCHMARK_TEMPLATE_DEFINE_F(BM_ConcurrentFreshQueueMultiThreadFixture,
   }
 }
 BENCHMARK_REGISTER_F(BM_ConcurrentFreshQueueMultiThreadFixture, PushAndPop)
+    ->RangeMultiplier(2)
+    ->Range(1 << 0, 1 << 10)
+    ->ThreadRange(2, std::thread::hardware_concurrency())
+    ->MeasureProcessCPUTime()
+    ->UseRealTime();
+
+template <typename T>
+class BM_LockFreeFreshQueueMultiThreadFixture : public benchmark::Fixture {
+protected:
+  boost::lockfree::queue<int> m_queue{10};
+};
+
+BENCHMARK_TEMPLATE_DEFINE_F(BM_LockFreeFreshQueueMultiThreadFixture, PushAndPop,
+                            int)
+(benchmark::State &state) {
+  bool isPushingThread{state.thread_index() % 2 == 0};
+  if (isPushingThread) {
+    for (auto _ : state) {
+      for (int i = state.range(0); i--;) {
+        m_queue.push(i);
+      }
+    }
+    state.counters["Pushes"] = benchmark::Counter(
+        static_cast<int64_t>(state.iterations() * state.range(0)),
+        benchmark::Counter::kIsRate);
+  } else {
+    int value{};
+    for (auto _ : state) {
+      for (int i = state.range(0); i--;) {
+        while (!m_queue.pop(value))
+          ;
+        benchmark::DoNotOptimize(value);
+      }
+    }
+  }
+}
+BENCHMARK_REGISTER_F(BM_LockFreeFreshQueueMultiThreadFixture, PushAndPop)
     ->RangeMultiplier(2)
     ->Range(1 << 0, 1 << 10)
     ->ThreadRange(2, std::thread::hardware_concurrency())
