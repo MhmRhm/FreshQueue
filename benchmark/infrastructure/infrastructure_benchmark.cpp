@@ -124,11 +124,53 @@ BENCHMARK(BM_LockFreeFreshQueue_PushAndPop<int>)
     ->Range(1 << 0, 1 << 5);
 
 template <typename T>
+class BM_QueueMultiThreadFixture : public benchmark::Fixture {
+protected:
+  std::queue<std::shared_ptr<T>> m_queue{};
+  std::mutex m_mutex;
+  std::condition_variable m_pushNotification;
+};
+BENCHMARK_TEMPLATE_DEFINE_F(BM_QueueMultiThreadFixture, PushAndPop, int)
+(benchmark::State &state) {
+  bool isPushingThread{state.thread_index() % 2 == 0};
+  if (isPushingThread) {
+    for (auto _ : state) {
+      for (int i = state.range(0); i--;) {
+        {
+          std::lock_guard lock{m_mutex};
+          m_queue.push(std::make_shared<int>(i));
+        }
+        m_pushNotification.notify_one();
+      }
+    }
+    state.counters["Pushes"] = benchmark::Counter(
+        static_cast<int64_t>(state.iterations() * state.range(0)),
+        benchmark::Counter::kIsRate);
+  } else {
+    std::shared_ptr<int> value{};
+    for (auto _ : state) {
+      for (int i = state.range(0); i--;) {
+        std::unique_lock lock{m_mutex};
+        m_pushNotification.wait(lock, [&] { return !m_queue.empty(); });
+        value = m_queue.front();
+        m_queue.pop();
+        benchmark::DoNotOptimize(value);
+      }
+    }
+  }
+}
+BENCHMARK_REGISTER_F(BM_QueueMultiThreadFixture, PushAndPop)
+    ->RangeMultiplier(2)
+    ->Range(1 << 0, 1 << 5)
+    ->ThreadRange(2, 1 << 10)
+    ->MeasureProcessCPUTime()
+    ->UseRealTime();
+
+template <typename T>
 class BM_ThreadSafeFreshQueueMultiThreadFixture : public benchmark::Fixture {
 protected:
   ThreadSafeFreshQueue<T> m_queue{};
 };
-
 BENCHMARK_TEMPLATE_DEFINE_F(BM_ThreadSafeFreshQueueMultiThreadFixture,
                             PushAndPop, int)
 (benchmark::State &state) {
@@ -164,7 +206,6 @@ class BM_ConcurrentFreshQueueMultiThreadFixture : public benchmark::Fixture {
 protected:
   ConcurrentFreshQueue<T> m_queue{};
 };
-
 BENCHMARK_TEMPLATE_DEFINE_F(BM_ConcurrentFreshQueueMultiThreadFixture,
                             PushAndPop, int)
 (benchmark::State &state) {
@@ -200,7 +241,6 @@ class BM_LockFreeFreshQueueMultiThreadFixture : public benchmark::Fixture {
 protected:
   boost::lockfree::queue<int> m_queue{10};
 };
-
 BENCHMARK_TEMPLATE_DEFINE_F(BM_LockFreeFreshQueueMultiThreadFixture, PushAndPop,
                             int)
 (benchmark::State &state) {
