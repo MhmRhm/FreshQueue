@@ -372,7 +372,6 @@ TEST(LockFreeFreshQueueOfInts, manyWaitAndPopThenPush) {
     for (auto &&i : iota(0, 1'000)) {
       while (!freshQueue.pop(value))
         ;
-      std::cout << value << std::endl;
       ASSERT_EQ(value, i);
     }
   }};
