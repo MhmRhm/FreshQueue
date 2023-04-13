@@ -1,103 +1,143 @@
 {
-  "version": 5,
-  "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 20,
-    "patch": 0
-  },
-  "configurePresets": [
-    {
-      "name": "base",
-      "displayName": "Base",
-      "description": "Sets common properties",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_STANDARD": "20",
-        "CMAKE_CXX_STANDARD_REQUIRED": "YES",
-        "CMAKE_CXX_EXTENSIONS": "OFF"
-      }
+    "version": 5,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
     },
-    {
-      "name": "windows-default-debug",
-      "displayName": "Windows x64 Debug",
-      "description": "Sets compilers, x64 architecture, build and install directory, debug build type",
-      "inherits": "base",
-      "binaryDir": "${sourceDir}/../${sourceDirName}-build-${presetName}",
-      "architecture": {
-        "value": "x64",
-        "strategy": "external"
-      },
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}",
-        "CPPCHECK_INSTALL_DIR": "C:\\Program Files\\Cppcheck",
-        "CLANG-FORMAT_INSTALL_DIR": "C:\\Program Files\\LLVM\\bin",
-        "DEFAULT_CXX_COMPILE_FLAGS": "/W4;/Wall;/WX;/EHsc;/wd4668;/wd4710",
-        "DEFAULT_CXX_OPTIMIZE_FLAG": "/Od"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [ "Windows" ]
-        }
-      }
-    },
-    {
-      "name": "linux-default-debug",
-      "displayName": "Linux Debug",
-      "description": "Sets compilers, build and install directory, debug build type",
-      "inherits": "base",
-      "binaryDir": "${sourceDir}/../${sourceDirName}-build-${presetName}",
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}",
-        "DEFAULT_CXX_COMPILE_FLAGS": "-Wextra;-Wall;-Wfloat-equal;-Wundef;-Wpointer-arith;-Wshadow;-Wcast-align;-Wswitch-default;-Wswitch-enum;-Wconversion;-Wpedantic;-Werror",
-        "DEFAULT_CXX_OPTIMIZE_FLAG": "-O0"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [ "Linux" ]
+    "configurePresets": [
+        {
+            "name": "base",
+            "displayName": "Base",
+            "description": "Sets common properties",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_STANDARD": "20",
+                "CMAKE_CXX_STANDARD_REQUIRED": "YES",
+                "CMAKE_CXX_EXTENSIONS": "OFF"
+            }
         },
-        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
-          "sourceDir": "$env{HOME}/.vs/ms${sourceDirName}"
-        }
-      }
-    },
-    {
-      "name": "windows-default-release",
-      "displayName": "Windows x64 Release",
-      "description": "Sets compilers, x64 architecture, build and install directory, release build type",
-      "inherits": "windows-default-debug",
-      "binaryDir": "${sourceDir}/../${sourceDirName}-build-${presetName}",
-      "architecture": {
-        "value": "x64",
-        "strategy": "external"
-      },
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [ "Windows" ]
-        }
-      }
-    },
-    {
-      "name": "linux-default-release",
-      "displayName": "Linux Release",
-      "description": "Sets compilers, build and install directory, release build type",
-      "inherits": "linux-default-debug",
-      "binaryDir": "${sourceDir}/../${sourceDirName}-build-${presetName}",
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}",
-        "DEFAULT_CXX_OPTIMIZE_FLAG": "-O3"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [ "Linux" ]
+        {
+            "name": "windows-default-debug",
+            "displayName": "Windows x64 Debug",
+            "description": "Sets compilers, x64 architecture, build and install directory, debug build type",
+            "inherits": "base",
+            "binaryDir": "${sourceDir}/../${sourceDirName}-build-${presetName}",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}",
+                "CPPCHECK_INSTALL_DIR": "C:\\Program Files\\Cppcheck",
+                "CLANG-FORMAT_INSTALL_DIR": "C:\\Program Files\\LLVM\\bin",
+                "DEFAULT_CXX_COMPILE_FLAGS": "/W4;/Wall;/WX;/EHsc;/wd4668;/wd4710",
+                "DEFAULT_CXX_OPTIMIZE_FLAG": "/Od"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [
+                        "Windows"
+                    ]
+                }
+            }
         },
-        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
-          "sourceDir": "$env{HOME}/.vs/ms${sourceDirName}"
+        {
+            "name": "linux-default-debug",
+            "displayName": "Linux Debug",
+            "description": "Sets compilers, build and install directory, debug build type",
+            "inherits": "base",
+            "binaryDir": "${sourceDir}/../${sourceDirName}-build-${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}",
+                "DEFAULT_CXX_COMPILE_FLAGS": "-Wextra;-Wall;-Wfloat-equal;-Wundef;-Wpointer-arith;-Wshadow;-Wcast-align;-Wswitch-default;-Wswitch-enum;-Wconversion;-Wpedantic;-Werror",
+                "DEFAULT_CXX_OPTIMIZE_FLAG": "-O0"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [
+                        "Linux"
+                    ]
+                },
+                "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+                    "sourceDir": "$env{HOME}/.vs/ms${sourceDirName}"
+                }
+            }
+        },
+        {
+            "name": "windows-default-release",
+            "displayName": "Windows x64 Release",
+            "description": "Sets compilers, x64 architecture, build and install directory, release build type",
+            "inherits": "windows-default-debug",
+            "binaryDir": "${sourceDir}/../${sourceDirName}-build-${presetName}",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [
+                        "Windows"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "linux-default-release",
+            "displayName": "Linux Release",
+            "description": "Sets compilers, build and install directory, release build type",
+            "inherits": "linux-default-debug",
+            "binaryDir": "${sourceDir}/../${sourceDirName}-build-${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}",
+                "DEFAULT_CXX_OPTIMIZE_FLAG": "-O3"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [
+                        "Linux"
+                    ]
+                },
+                "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+                    "sourceDir": "$env{HOME}/.vs/ms${sourceDirName}"
+                }
+            }
         }
-      }
-    }
-  ]
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-default-debug",
+            "displayName": "Windows x64 Debug",
+            "description": "Sets compilers, x64 architecture, build and install directory, debug build type",
+            "configurePreset": "windows-default-debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "linux-default-debug",
+            "displayName": "Linux Debug",
+            "description": "Sets compilers, build and install directory, debug build type",
+            "configurePreset": "linux-default-debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "windows-default-release",
+            "displayName": "Windows x64 Release",
+            "description": "Sets compilers, x64 architecture, build and install directory, release build type",
+            "configurePreset": "windows-default-release",
+            "configuration": "Release"
+        },
+        {
+            "name": "linux-default-release",
+            "displayName": "Linux Release",
+            "description": "Sets compilers, build and install directory, release build type",
+            "configurePreset": "linux-default-release",
+            "configuration": "Release"
+        }
+    ]
 }
