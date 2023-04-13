@@ -1,5 +1,5 @@
 function(Format target directory)
-    find_program(CLANG-FORMAT_PATH clang-format REQUIRED)
+    find_program(CLANG-FORMAT_PATH clang-format REQUIRED PATHS "${CLANG-FORMAT_INSTALL_DIR}")
     set(EXPRESSION h hpp hh c cc cxx cpp)
     list(TRANSFORM EXPRESSION PREPEND "${directory}/*.")
     file(GLOB_RECURSE SOURCE_FILES FOLLOW_SYMLINKS

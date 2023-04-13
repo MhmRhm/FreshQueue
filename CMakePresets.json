@@ -31,7 +31,8 @@
       "cacheVariables": {
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}",
         "CPPCHECK_INSTALL_DIR": "C:\\Program Files\\Cppcheck",
-        "DEFAULT_CXX_COMPILE_FLAGS": "/W4;/Wall;/WX;/EHsc;/wd4668",
+        "CLANG-FORMAT_INSTALL_DIR": "C:\\Program Files\\LLVM\\bin",
+        "DEFAULT_CXX_COMPILE_FLAGS": "/W4;/Wall;/WX;/EHsc;/wd4668;/wd4710",
         "DEFAULT_CXX_OPTIMIZE_FLAG": "/Od"
       },
       "vendor": {
@@ -71,8 +72,7 @@
         "strategy": "external"
       },
       "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}",
-        "DEFAULT_CXX_OPTIMIZE_FLAG": "/O2"
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/../${sourceDirName}-install-${presetName}"
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {

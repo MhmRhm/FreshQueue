@@ -13,7 +13,7 @@ set_target_properties(infrastructure_obj PROPERTIES
     PUBLIC_HEADER src/infrastructure/include/infrastructure/infrastructure.h
     POSITION_INDEPENDENT_CODE 1
 )
-target_link_libraries(infrastructure_obj PRIVATE atomic precompiled)
+target_link_libraries(infrastructure_obj PRIVATE precompiled "$<$<PLATFORM_ID:UNIX>:atomic>")
 BuildInfo(infrastructure_obj)
 
 add_library(infrastructure_shared SHARED)
