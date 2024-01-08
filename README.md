@@ -1,3 +1,3 @@
 # The FreshQueue
 
-A concurrent data structure to store most recent items in a queue.
+Benchmarking of concurrent data structures for storing most recent items in a queue.
