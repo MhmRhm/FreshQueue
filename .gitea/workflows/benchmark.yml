@@ -1,0 +1,16 @@
+name: Benchmarking Actions
+run-name: ${{ gitea.actor }} is testing out Benchmarking Actions
+on: [push]
+
+jobs:
+  Benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - run: echo "The ${{ gitea.repository }} repository has been cloned to the runner."
+      - run: echo "The workflow is now ready to test your code on the runner."
+      - name: List files in the repository
+        run: |
+          ls ${{ gitea.workspace }}
+      - run: echo "This job's status is ${{ job.status }}."
