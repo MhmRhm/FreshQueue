@@ -6,10 +6,10 @@ jobs:
   Benchmark:
     runs-on: ubuntu-latest
     steps:
+      - name: Install dependencies
+        run: sudo apt-get -y install build-essential clang-17 clang-format-17 clang-tidy-17 clang-tools-17 doxygen graphviz cppcheck valgrind lcov libssl-dev ninja-build libtbb-dev
       - name: Check out repository code
         uses: actions/checkout@v4
-      - run: echo "The ${{ gitea.repository }} repository has been cloned to the runner."
-      - run: echo "The workflow is now ready to test your code on the runner."
       - name: List files in the repository
         run: ls ${{ gitea.workspace }}
       - name: Configure the project
