@@ -4,18 +4,23 @@ on: [push]
 
 jobs:
   Benchmark:
-    runs-on: ubuntu-latest
+    runs-on: custom-linux
     steps:
+      - run: sudo apt-get update && sudo apt-get -y upgrade
       - name: Install dependencies
-        run: sudo apt-get -y install build-essential clang-17 clang-format-17 clang-tidy-17 clang-tools-17 doxygen graphviz cppcheck valgrind lcov libssl-dev ninja-build libtbb-dev
+        run: sudo apt-get -y install build-essential clang clang-format clang-tidy clang-tools cmake doxygen graphviz cppcheck valgrind lcov libssl-dev ninja-build libtbb-dev
       - name: Check out repository code
         uses: actions/checkout@v4
       - name: List files in the repository
         run: ls ${{ gitea.workspace }}
+      - run: cmake --version
       - name: Configure the project
         run: cmake --preset linux-default-debug
         working-directory: ${{ gitea.workspace }}
       - name: Build the project
         run: cmake --build --preset linux-default-debug
         working-directory: ${{ gitea.workspace }}
+      - name: Run benchmarks
+        run: ./benchmark/infrastructure/infrastructure_benchmark
+        working-directory: ${{ gitea.workspace }}-build-linux-default-debug
       - run: echo "This job's status is ${{ job.status }}."
