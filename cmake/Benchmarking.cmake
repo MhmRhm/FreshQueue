@@ -2,7 +2,7 @@ include(FetchContent)
 FetchContent_Declare(
 	googlebenchmark
 	GIT_REPOSITORY https://github.com/google/benchmark.git
-	GIT_TAG v1.7.1
+	GIT_TAG v1.8.4
 )
 option(BENCHMARK_ENABLE_TESTING "Enable testing of the benchmark library." OFF)
 option(BENCHMARK_ENABLE_EXCEPTIONS "Enable the use of exceptions in the benchmark library." ON)

@@ -26,12 +26,9 @@ jobs:
         working-directory: ${{ gitea.workspace }}
 
       - name: Run Benchmarks
-        run: ./benchmark/infrastructure/infrastructure_benchmark --benchmark_out=/benchmarks/FreshQueue/${{ gitea.sha }}_${{ gitea.run_attempt }}.json --benchmark_out_format=json
+        run: ./benchmark/infrastructure/infrastructure_benchmark --benchmark_out=/benchmarks/FreshQueue/${{ gitea.sha }}_${{ gitea.run_number }}.json --benchmark_out_format=json
         working-directory: ${{ gitea.workspace }}-build-linux-default-release
 
       - name: Compare Benchmarks
         run: python3 compare.py ${{ gitea.sha }}_${{ gitea.run_attempt }}.json
         working-directory: /benchmarks/FreshQueue/
-
-      - name: Print Status
-        run: echo "This job's status is ${{ job.status }}."
