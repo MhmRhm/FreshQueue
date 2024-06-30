@@ -22,7 +22,7 @@ for benchmark in baseline_json['benchmarks']:
 deteriorated_benchmarks = list()
 for name, pushes in baseline_map.items():
     if name in workflow_map:
-        if pushes > workflow_map[name] and (pushes - workflow_map[name]) / pushes > 0.5:
+        if pushes > workflow_map[name] and (pushes - workflow_map[name]) / pushes > 0.05:
             deteriorated_benchmarks.append((name, (pushes - workflow_map[name]) / pushes))
             result = False
 
