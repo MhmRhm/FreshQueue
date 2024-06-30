@@ -1,5 +1,5 @@
 name: Benchmarking Actions
-run-name: ${{ gitea.actor }} is testing out Benchmarking Actions
+run-name: ${{ gitea.actor }} Running Benchmarking Actions
 on: [push]
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get -y upgrade
 
       - name: Install Dependencies
-        run: sudo apt-get -y install build-essential clang clang-format clang-tidy clang-tools cmake doxygen graphviz cppcheck valgrind lcov libssl-dev ninja-build libtbb-dev
+        run: sudo apt-get -y install build-essential clang clang-format clang-tidy clang-tools cmake doxygen graphviz cppcheck valgrind lcov libssl-dev ninja-build libtbb-dev libboost-all-dev
 
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -26,9 +26,9 @@ jobs:
         working-directory: ${{ gitea.workspace }}
 
       - name: Run Benchmarks
-        run: ./benchmark/infrastructure/infrastructure_benchmark --benchmark_out=/benchmarks/FreshQueue/${{ gitea.sha }}_${{ gitea.run_number }}.json --benchmark_out_format=json
+        run: ./benchmark/infrastructure/infrastructure_benchmark --benchmark_out=${{ gitea.sha }}_${{ gitea.run_number }}.json --benchmark_out_format=json
         working-directory: ${{ gitea.workspace }}-build-linux-default-release
 
       - name: Compare Benchmarks
-        run: python3 compare.py /benchmarks/FreshQueue/${{ gitea.sha }}_${{ gitea.run_number }}.json
+        run: python3 compare.py ${{ gitea.workspace }}-build-linux-default-release/${{ gitea.sha }}_${{ gitea.run_number }}.json
         working-directory: ${{ gitea.workspace }}/.gitea/workflows/

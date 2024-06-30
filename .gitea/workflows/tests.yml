@@ -1,0 +1,30 @@
+name: Testing Actions
+run-name: ${{ gitea.actor }} Running Tests Actions
+on: [push]
+
+jobs:
+  Benchmark:
+    runs-on: custom-linux
+
+    steps:
+
+      - name: Update
+        run: sudo apt-get update && sudo apt-get -y upgrade
+
+      - name: Install Dependencies
+        run: sudo apt-get -y install build-essential clang clang-format clang-tidy clang-tools cmake doxygen graphviz cppcheck valgrind lcov libssl-dev ninja-build libtbb-dev libboost-all-dev
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake --preset linux-default-release
+        working-directory: ${{ gitea.workspace }}
+
+      - name: Build
+        run: cmake --build --preset linux-default-release
+        working-directory: ${{ gitea.workspace }}
+
+      - name: Run Tests
+        run: ./test/infrastructure/infrastructure_test
+        working-directory: ${{ gitea.workspace }}-build-linux-default-release
