@@ -1,9 +1,7 @@
-include(FetchContent)
-set(BOOST_INCLUDE_LIBRARIES lockfree)
-set(BOOST_ENABLE_CMAKE ON)
-FetchContent_Declare(
-	Boost
-	GIT_REPOSITORY https://github.com/boostorg/boost.git
-	GIT_TAG boost-1.85.0
-)
-FetchContent_MakeAvailable(Boost)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_DEBUG_LIBS OFF)
+set(Boost_USE_RELEASE_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED COMPONENTS thread program_options)
+include_directories(${Boost_INCLUDE_DIR} ${BOOST_LOCKFREE_DIR})
