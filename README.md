@@ -422,6 +422,7 @@ For more detailed explanations, you can refer to the following links:
 - [Act Runner](https://docs.gitea.com/usage/actions/act-runner)
 - [CMake](https://apt.kitware.com)
 - [Lock Freq](https://forums.linuxmint.com/viewtopic.php?p=1880419&sid=ac3c263e5d659e366c34f66c48ef8888#p1880419)
+- [NVM](https://github.com/nvm-sh/nvm)
 
 ```bash
 # install requirements
@@ -446,6 +447,21 @@ sudo apt-get install cmake
 sudo apt-get install cpufrequtils
 sudo cpufreq-set --governor userspace
 sudo cpufreq-set --freq 1800000
+
+# install runner
+sudo su -
+wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+exit
+sudo su -
+nvm install node
+wget https://dl.gitea.com/act_runner/nightly/act_runner-nightly-linux-arm64
+chmod +x act_runner-nightly-linux-arm64
+./act_runner-nightly-linux-arm64 --version
+./act_runner-nightly-linux-arm64 register --no-interactive --instance \
+  'http://<ip-address>:3000' \
+  --token '<from-gitea>' --name Custom-Machine \
+  --labels 'arm-locked-freq-linux'
+./act_runner-nightly-linux-arm64 daemon
 ```
 
 ## Comparison
