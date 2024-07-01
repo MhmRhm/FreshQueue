@@ -251,3 +251,81 @@ the next step, which is setting up our Git server and CI/CD pipelines.
 
 ## Git Server
 
+We use Gitea as our Git server because it is open-source, free, lightweight
+compared to other solutions like GitLab, and easy to configure. To set up a
+local Gitea instance, you can use the following docker-compose.yml file:
+
+```yml
+services:
+  gitea:
+    image: 'gitea/gitea:latest'
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=postgres_gitea:5432
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=gitea
+    restart: always
+    ports:
+      - '3000:3000'
+      - '2222:22'
+    volumes:
+      - ./gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      postgres_gitea:
+        condition: service_healthy
+
+  postgres_gitea:
+    image: 'postgres:latest'
+    container_name: postgres_gitea
+    restart: always
+    environment:
+      - POSTGRES_USER=gitea
+      - POSTGRES_PASSWORD=gitea
+      - POSTGRES_DB=gitea
+    volumes:
+      - ./gitea/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 3s
+      timeout: 5s
+      retries: 3
+
+  runner_gitea:
+    image: gitea/act_runner:nightly
+    container_name: runner_gitea
+    environment:
+      GITEA_INSTANCE_URL: "http://<server-ip>:3000"
+      GITEA_RUNNER_REGISTRATION_TOKEN: "<from-gitea>"
+      GITEA_RUNNER_NAME: "Docker-Runner"
+      GITEA_RUNNER_LABELS: "docker-runner"
+    volumes:
+      - ./gitea/runner:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+```
+
+This setup will configure three containers: one for the Gitea instance, another
+for the Gitea database, and a third for the Gitea runner. For the runner to
+function correctly, you need to first launch the Gitea instance, extract a
+registration token from it, and then provide that token to the runner.
+
+The first time you run Gitea, it will prompt you for initial setup settings.
+While you can skip most of them, ensure to create an administrative account.
+This account may be necessary for enabling Actions for the instance later on.
+
+Once Gitea setup is complete, create a user account for yourself and a
+repository to push your codebase to. After setting up the repository, navigate
+to its settings and under *Actions->Runners*. Use *Create new Runner* to obtain
+the Registration Token. Paste this token into the docker-compose.yml file, then
+start the runner with `sudo docker compose up -d`. You should now see the runner
+listed under *Actions -> Runners*.
+
+<p align="center"><img src="https://github.com/MhmRhm/FreshQueue/blob/main/doc/images/actions_runners.png" alt="Actions-Runners"></img></p>
+
+## CI/CD Pipeline
+
