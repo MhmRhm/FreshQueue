@@ -470,7 +470,9 @@ The final step is to compare the benchmarking results to a baseline. I used a
 Python script to compare the results for each benchmark. Additionally, the
 Google Benchmark library provides a more comprehensive
 [tool](https://github.com/google/benchmark/blob/main/docs/tools.md) for
-comparing results and performing statistical analysis.
+comparing results and performing statistical analysis. We call this script in
+our pipeline with
+`python3 compare.py ${{ gitea.workspace }}-build-linux-default-release/${{ gitea.sha }}_${{ gitea.run_number }}.json`.
 
 ```python
 import json
@@ -514,3 +516,13 @@ benchmark run used as the baseline.
 Now, the pipeline is ready and will run on each push:
 
 <p align="center"><img src="https://github.com/MhmRhm/FreshQueue/blob/main/doc/images/pipeline_run.png" alt="Pipeline Run"></img></p>
+
+## Closing Thoughts
+
+In a simple case study, we explored why tracking software performance is
+essential and what components are necessary for a pipeline to achieve this. When
+dealing with performance, it's always a good practice to aim higher than the
+requirements. For example, if a process needs to run in 100 ms, aim for 70 or 80
+ms. You will be surprised at the innovative ways you can achieve this. This
+approach leaves you with a buffer of 20 to 30 ms for future requirements or
+unexpected challenges.
