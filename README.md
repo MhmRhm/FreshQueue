@@ -329,3 +329,123 @@ listed under *Actions -> Runners*.
 
 ## CI/CD Pipeline
 
+To create a workflow, add a .yml file to the .gitea/workflows directory in your
+repository. The syntax of this file is the same as
+[GitHub Actions](https://docs.github.com/en/actions). Below is an example action
+used to run both tests and benchmarks in our case study. 
+
+One part is particularly important: the `runs-on:` setting. Here, you list the
+labels used when setting up the runners, such as
+`GITEA_RUNNER_LABELS: "docker-runner"` in our docker-compose.yml file. Any
+runner with any of the specified labels will be eligible to run the workflow.
+
+```yml
+name: Run Tests and Benchmarks
+run-name: ${{ gitea.actor }} Running Tests and Benchmarks Actions
+on: [push]
+
+jobs:
+  Tests:
+    runs-on: arm-locked-freq-linux
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake --preset linux-default-release
+        working-directory: ${{ gitea.workspace }}
+
+      - name: Build
+        run: cmake --build --preset linux-default-release
+        working-directory: ${{ gitea.workspace }}
+
+      - name: Run Tests
+        run: ./test/infrastructure/infrastructure_test
+        working-directory: ${{ gitea.workspace }}-build-linux-default-release
+
+  Benchmarks:
+    needs: Tests
+    runs-on: arm-locked-freq-linux
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake --preset linux-default-release
+        working-directory: ${{ gitea.workspace }}
+
+      - name: Build
+        run: cmake --build --preset linux-default-release
+        working-directory: ${{ gitea.workspace }}
+
+      - name: Cache Warm-Up
+        run: ./benchmark/infrastructure/infrastructure_benchmark
+        working-directory: ${{ gitea.workspace }}-build-linux-default-release
+
+      - name: Run Benchmarks
+        run: ./benchmark/infrastructure/infrastructure_benchmark --benchmark_out=${{ gitea.sha }}_${{ gitea.run_number }}.json --benchmark_out_format=json
+        working-directory: ${{ gitea.workspace }}-build-linux-default-release
+
+      - name: Compare Benchmarks
+        run: python3 compare.py ${{ gitea.workspace }}-build-linux-default-release/${{ gitea.sha }}_${{ gitea.run_number }}.json
+        working-directory: ${{ gitea.workspace }}/.gitea/workflows/
+```
+
+## Actors
+
+We have already set up an actor in our docker-compose.yml file. However, this
+approach can have some issues. The images provided by Gitea or GitHub for use as
+actors may not always be up-to-date. For example, in our case, we need a recent
+version of CMake to configure and build our project. Unfortunately, these
+distributions are often a few versions behind.
+
+Another issue is that if we use the provided images, we have to install the
+necessary dependencies for our project with each run of the workflow, which can
+be time-consuming. More importantly, our benchmarks need to be run on a stable
+system. Since both our Gitea instance and runner are running on the same machine
+, the server might be used for other tasks while the runner is benchmarking a
+build. This can lead to unstable and inaccurate benchmark results. Additionally,
+if someone is developing code for a specific line of GPUs, they will need access
+to the actual hardware.
+
+The solution to all these problems is to set up a dedicated physical machine
+solely for running benchmarks. You can also lock the CPU frequency on that
+machine to achieve even more stable results. This way, you only need to
+configure the system once.
+
+To set up a machine as a runner, you need to download the Act Runner and
+configure it properly. This process is quite straightforward. The following
+steps outline how to set up a dedicated machine for this case study.
+
+For more detailed explanations, you can refer to the following links:
+
+- [Act Runner](https://docs.gitea.com/usage/actions/act-runner)
+- [CMake](https://apt.kitware.com)
+- [Lock Freq](https://forums.linuxmint.com/viewtopic.php?p=1880419&sid=ac3c263e5d659e366c34f66c48ef8888#p1880419)
+
+```bash
+# install requirements
+sudo apt-get update && sudo apt-get -y upgrade
+sudo apt-get -y install build-essential clang clang-format clang-tidy \
+  clang-tools cmake doxygen graphviz cppcheck valgrind lcov libssl-dev \
+  ninja-build libtbb-dev libboost-all-dev
+
+# install cmake
+sudo apt-get install ca-certificates gpg wget
+test -f /usr/share/doc/kitware-archive-keyring/copyright ||
+wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+sudo apt-get update
+test -f /usr/share/doc/kitware-archive-keyring/copyright ||
+sudo rm /usr/share/keyrings/kitware-archive-keyring.gpg
+sudo apt-get install kitware-archive-keyring
+sudo apt-get autoremove cmake
+sudo apt-get install cmake
+
+# lock freq
+sudo apt-get install cpufrequtils
+sudo cpufreq-set --governor userspace
+sudo cpufreq-set --freq 1800000
+```
+
+## Comparison
