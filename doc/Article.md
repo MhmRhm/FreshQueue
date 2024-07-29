@@ -65,7 +65,8 @@ Concurrent code is typically designed for performance, but it is also the most
 difficult to debug. Therefore, it is crucial to consider benchmarking from the
 start. Modifying and refactoring these parts of your software can be very risky.
 
-For the ones who work with C/C++, the Google Benchmark library offers many features, including the ability to:
+For the ones who work with C/C++, the [Google Benchmark](https://github.com/google/benchmark)
+library offers many features, including the ability to:
 
 - Define a range of threads to run the code on
 - Specify a range of inputs for the code
