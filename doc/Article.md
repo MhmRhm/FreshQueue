@@ -65,8 +65,9 @@ Concurrent code is typically designed for performance, but it is also the most
 difficult to debug. Therefore, it is crucial to consider benchmarking from the
 start. Modifying and refactoring these parts of your software can be very risky.
 
-For the ones who work with C/C++, the [Google Benchmark](https://github.com/google/benchmark)
-library offers many features, including the ability to:
+For the ones who work with C/C++, the
+[Google Benchmark](https://github.com/google/benchmark) library offers many
+features, including the ability to:
 
 - Define a range of threads to run the code on
 - Specify a range of inputs for the code
@@ -76,17 +77,18 @@ library offers many features, including the ability to:
 
 ### Git Server and CI/CD Pipeline
 
-For our Git server, we have several options available, with GitHub being a
-prominent one. You may also want to consider Gitea for several reasons:
+For our Git server, we have several options available, with
+[GitHub](https://github.com/) being a prominent one. You may also want to
+consider [Gitea](https://gitea.com/) for several reasons:
 
 1. **Self-Hosting**: Unlike GitHub, Gitea allows us to host the server on our
 own network.
 2. **Open Source and Free**: Gitea is open source and free to use.
 3. **Features**: It comes with many features, including automated pipelines,
 issue tracking, and code review.
-4. **Lightweight**: Unlike a self-hosted GitLab instance, Gitea is much more
-lightweight and has a smaller performance footprint on the server, allowing more
-resources for other functionalities.
+4. **Lightweight**: Unlike a self-hosted [GitLab](https://about.gitlab.com/)
+instance, Gitea is much more lightweight and has a smaller performance footprint
+on the server, allowing more resources for other functionalities.
 5. **Quick Setup**: The setup can be done within seconds using Docker images.
 
 Another benefit of using Gitea is that the syntax for CI/CD workflows is the
