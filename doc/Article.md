@@ -39,9 +39,8 @@ maintaining or improving performance.
 
 ## Required Components
 
-To that end, through an example, I will explain the steps you need to follow to
-incorporate a benchmarking workflow into your CI/CD pipelines. The complete
-codebase is available at [GitHub](https://github.com/MhmRhm/FreshQueue).
+To that end, I will explain the steps you need to follow to
+incorporate a benchmarking workflow into your CI/CD pipelines.
 
 There are many parts involved in a benchmarking pipeline:
 
@@ -53,34 +52,20 @@ There are many parts involved in a benchmarking pipeline:
 - The Docker images used for or by the actors
 - The tools used for analyzing the benchmark results
 
-All these components come together to form our pipeline. Let's briefly review
-them and explain the available options, which ones we chose for this example,
-and why.
+All these components combine to form our pipeline. Let's briefly review them,
+explain the available options, and highlight which ones help you get started
+faster.
 
 ### The Code and Benchmark Library
 
 With benchmarking in mind, the code should be written in a way that allows for
 effective benchmarking. If you are practicing Test Driven Development (TDD) or
 have a testable codebase, it usually means it is also suitable for benchmarking.
-Concurrent code is typically designed for performance. Thus we will test and
-benchmark a few implementations of a concurrent queue. For more detailed
-information on concurrency and the implementation of these data structures,
-refer to [C++ Concurrency in Action](https://www.manning.com/books/c-plus-plus-concurrency-in-action).
+Concurrent code is typically designed for performance, but it is also the most
+difficult to debug. Therefore, it is crucial to consider benchmarking from the
+start. Modifying and refactoring these parts of your software can be very risky.
 
-Our first implementation is a concurrent queue that uses locks to manage
-simultaneous pushes and pops from multiple threads. The second implementation is
-an enhanced singly linked list with separate locks on the head and tail to
-reduce contention on shared data. We expect this data structure to be more
-performant than our first one when accessed by multiple threads. Lastly, we
-utilize an open-source lock-free queue implementation from the
-[Boost library](https://www.boost.org/doc/libs/1_85_0/boost/lockfree/queue.hpp).
-
-Since we are working with C++, for benchmarking and testing, we utilize Google
-libraries available at:
-[GoogleTest](http://google.github.io/googletest/) and
-[Google Benchmark](https://github.com/google/benchmark/blob/main/docs/user_guide.md).
-
-The Google Benchmark library offers many features, including the ability to:
+For the ones who work with C/C++, the Google Benchmark library offers many features, including the ability to:
 
 - Define a range of threads to run the code on
 - Specify a range of inputs for the code
@@ -90,22 +75,23 @@ The Google Benchmark library offers many features, including the ability to:
 
 ### Git Server and CI/CD Pipeline
 
-For our Git server, we have several options available. We chose Gitea for many reasons:
+For our Git server, we have several options available, with GitHub being a
+prominent one. You may also want to consider Gitea for several reasons:
 
 1. **Self-Hosting**: Unlike GitHub, Gitea allows us to host the server on our
 own network.
 2. **Open Source and Free**: Gitea is open source and free to use.
 3. **Features**: It comes with many features, including automated pipelines,
 issue tracking, and code review.
-4. **Lightweight**: Unlike GitLab, Gitea is much more lightweight and has a
-smaller performance footprint on the server, leaving more room for other
-functionalities.
+4. **Lightweight**: Unlike a self-hosted GitLab instance, Gitea is much more
+lightweight and has a smaller performance footprint on the server, allowing more
+resources for other functionalities.
 5. **Quick Setup**: The setup can be done within seconds using Docker images.
 
 Another benefit of using Gitea is that the syntax for CI/CD workflows is the
 same as GitHub's, which is widely used and very well documented.
 
-The following is our benchmarking pipeline:
+Here is an example of a typical benchmarking pipeline:
 
 ```yml
 name: Run Benchmarks
@@ -142,15 +128,16 @@ jobs:
 
 ### Actors
 
-We can easily set up an actor via a Docker image. However, this approach can
-have some issues. The images provided by Gitea or GitHub for use as actors may
-not always be up-to-date. For example, in our case, we need a recent version of
-CMake to configure and build our project. Unfortunately, these Docker images are
-often a few versions behind.
+Actors are the virtual machines (VMs) or physical machines that build and run
+your code to test or benchmark.
 
-Another issue is that if we use the provided images, we have to install the
-necessary dependencies for our project with each run of the workflow, which can
-be time-consuming. More importantly, our benchmarks need to be run on a stable
+We can easily set up an actor using a Docker image. However, this approach can
+have some issues. The Docker images provided by Gitea or GitHub for use as actors
+may not always be up-to-date. For example, you might need a recent version of
+CMake to configure and build a project with C++20's modules support, but these
+Docker images are often a few versions behind.
+
+More importantly, our benchmarks need to be run on a stable
 system. Since both our Gitea instance and runner are running on the same machine
 , the server might be used for other tasks while the runner is benchmarking a
 build. This can lead to unstable and inaccurate benchmark results. Additionally,
@@ -162,23 +149,15 @@ solely for running benchmarks. You can also lock the CPU frequency on that
 machine to achieve even more stable results.
 
 To set up a machine as a runner, you need to download the Act Runner and
-configure it properly. This process is quite straightforward. Here are some
-links that explain the necessary steps to set up such a system:
-
-- [Act Runner](https://docs.gitea.com/usage/actions/act-runner)
-- [NVM](https://github.com/nvm-sh/nvm)
-- [cpufrequtils](https://forums.linuxmint.com/viewtopic.php?p=1880419&sid=ac3c263e5d659e366c34f66c48ef8888#p1880419)
-- [CMake](https://apt.kitware.com)
-
-These resources will help you through the setup process.
+configure it properly. This process is quite straightforward.
 
 ### Comparison
 
-The final step is to compare the benchmarking results to a baseline. I used a
-Python script to compare the results for each benchmark. Additionally, the
-Google Benchmark library provides a more comprehensive
-[tool](https://github.com/google/benchmark/blob/main/docs/tools.md) for
-comparing results and performing statistical analysis.
+The final step is to compare the benchmarking results to a baseline. Since you
+can have the benchmarking results in CSV or JSON format, you may use a Python
+script to compare the results for each benchmark. Additionally, the Google
+Benchmark library provides a more comprehensive tool for comparing results and
+performing statistical analysis.
 
 Now, the pipeline is ready and will run on each push:
 
@@ -186,13 +165,12 @@ Now, the pipeline is ready and will run on each push:
 
 ## Closing Thoughts
 
-In a simple case study, we explored why tracking software performance is
-essential and what components are necessary for a pipeline to achieve this. When
-dealing with performance, it's always a good practice to aim higher than the
-requirements. For example, if a process needs to run in 100 ms, aim for 70 or 80
-ms. You will be surprised at the innovative ways you can achieve this. This
-approach leaves you with a buffer of 20 to 30 ms for future requirements or
-unexpected challenges.
+We explored why tracking software performance is essential and what components
+are necessary for a pipeline to achieve this. When dealing with performance, it's
+always a good practice to aim higher than the requirements. For example, if a
+process needs to run in 100 ms, aim for 70 or 80 ms. You will be surprised at the
+innovative ways you can achieve this. This approach leaves you with a buffer of
+20 to 30 ms for future requirements or unexpected challenges.
 
 With a functioning and well-maintained CI/CD pipeline in place, you can ensure
 that the criteria on which the code was developed will remain in place long
